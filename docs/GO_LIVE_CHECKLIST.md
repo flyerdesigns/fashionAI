@@ -80,24 +80,27 @@ Complete before production deployment. All items must be verified in **staging**
 - [ ] Rollback procedure documented (`docs/STAGING.md`)
 - [ ] GO/NO-GO decision recorded (`docs/STEP_17_FINAL_REPORT.md`)
 
-## Step 19 — GitHub Actions Certification
+## Step 20 — Publish & Execute GitHub Certification
 
-Push to GitHub and dispatch the workflow (see `docs/STEP_19.md`):
+Local repository prepared (`FahionAI/.git`, commit on `main`).
 
-1. Configure repository secrets: `STAGING_AWS_*`, `STAGING_STRIPE_*`, `STAGING_GEMINI_API_KEY`
-2. Configure variable: `STAGING_BASE_URL` (deployed staging HTTPS URL)
-3. **Actions → Staging Certification → Run workflow**
-4. First run: `run_soak=false` — target `certify-core` PASS
-5. With secrets: target `certify-providers` PASS
-6. Final GO: `run_soak=true` after all providers pass
+**BLOCKED until owner provides GitHub repository URL:**
 
-- [ ] Repository pushed to GitHub
-- [ ] `certify-core` job PASS (integration 0 skip, Playwright 0 skip)
-- [ ] Provider secrets configured
-- [ ] `certify-providers` job PASS
+```bash
+git remote add origin <REAL_REPOSITORY_URL>
+git push -u origin main
+```
+
+Then configure secrets and dispatch workflow (see `docs/STEP_20.md`):
+
+- [ ] GitHub repository URL provided and remote configured
+- [ ] Code pushed to GitHub
+- [ ] `STAGING_*` secrets configured
+- [ ] Staging application deployed
 - [ ] `STAGING_BASE_URL` variable set
-- [ ] 24h soak completed (`run_soak=true`)
-- [ ] Post-soak E2E PASS
+- [ ] `certify-core` job PASS (Playwright 0 skip)
+- [ ] `certify-providers` job PASS
+- [ ] 24h soak completed
 - [ ] `FINAL DECISION: GO` in certification summary
 
 ## GO / NO-GO Criteria
