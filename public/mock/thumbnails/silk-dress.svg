@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#F5F5F4"/>
+  <ellipse cx="200" cy="200" rx="90" ry="70" fill="#D6D3D1"/>
+  <path d="M140 80 Q200 40 260 80 L270 200 Q200 220 130 200 Z" fill="#A8A29E"/>
+  <text x="200" y="270" text-anchor="middle" fill="#78716C" font-family="system-ui" font-size="14">Silk Dress</text>
+</svg>

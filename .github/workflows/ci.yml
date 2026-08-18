@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: atelier_ai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_PROVIDER: postgres
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/atelier_ai_test
+      DATABASE_URL_TEST: postgresql://postgres:postgres@localhost:5432/atelier_ai_test
+      REDIS_URL_TEST: redis://localhost:6379
+      STORAGE_PROVIDER: local
+      AUTH_SECRET: ci-test-auth-secret-minimum-32-characters-long
+      AUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      RATE_LIMIT_PROVIDER: memory
+      STRIPE_STARTER_PRICE_ID: price_starter_test
+      GEMINI_API_KEY: test-gemini-key
+      VIDEO_PROVIDER_API_KEY: test-video-key
+      CI: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Validate Prisma schema
+        run: npx prisma validate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: Security tests
+        run: npm run test:security
+
+      - name: Smoke tests
+        run: npm run test:smoke
+
+      - name: Build
+        run: npm run build
+
+      - name: Production verification (config)
+        env:
+          VERIFY_PRODUCTION: "true"
+          VERIFY_RUN_TESTS: "true"
+          NODE_ENV: production
+          STORAGE_PROVIDER: s3
+          AWS_S3_BUCKET: ci-test-bucket
+          AWS_ACCESS_KEY_ID: ci-test-key
+          AWS_SECRET_ACCESS_KEY: ci-test-secret
+          STRIPE_SECRET_KEY: sk_test_ci
+          STRIPE_WEBHOOK_SECRET: whsec_ci_test
+          STRIPE_STARTER_PRICE_ID: price_starter_test
+          GEMINI_API_KEY: test-gemini-key
+          VIDEO_PROVIDER_API_KEY: test-video-key
+          DATABASE_PROVIDER: postgres
+          APP_URL: http://localhost:3000
+          AUTH_SECRET: ci-test-auth-secret-minimum-32-characters-long
+        run: npm run verify:production
+
+      - name: Install Playwright browser
+        run: npx playwright install chromium --with-deps
+
+      - name: Seed Playwright test users
+        env:
+          PLAYWRIGHT_SEED: "true"
+          PLAYWRIGHT_TEST_EMAIL: playwright-user@test.local
+          PLAYWRIGHT_TEST_PASSWORD: PlaywrightTest123!
+          PLAYWRIGHT_ADMIN_TEST_EMAIL: playwright-admin@test.local
+          PLAYWRIGHT_ADMIN_TEST_PASSWORD: PlaywrightAdmin123!
+          PLAYWRIGHT_SUSPENDED_TEST_EMAIL: playwright-suspended@test.local
+          PLAYWRIGHT_SUSPENDED_TEST_PASSWORD: PlaywrightSuspended123!
+        run: npm run seed:playwright
+
+      - name: Playwright E2E (deterministic)
+        env:
+          PLAYWRIGHT_TEST_EMAIL: playwright-user@test.local
+          PLAYWRIGHT_TEST_PASSWORD: PlaywrightTest123!
+          PLAYWRIGHT_ADMIN_TEST_EMAIL: playwright-admin@test.local
+          PLAYWRIGHT_ADMIN_TEST_PASSWORD: PlaywrightAdmin123!
+          PLAYWRIGHT_SUSPENDED_TEST_EMAIL: playwright-suspended@test.local
+          PLAYWRIGHT_SUSPENDED_TEST_PASSWORD: PlaywrightSuspended123!
+          PLAYWRIGHT_WEBSERVER_CMD: npm run start
+          PLAYWRIGHT_SEED: "true"
+        run: npm run test:e2e

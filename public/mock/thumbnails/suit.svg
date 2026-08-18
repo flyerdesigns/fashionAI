@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#E7E5E4"/>
+  <rect x="110" y="80" width="180" height="150" rx="4" fill="#44403C"/>
+  <path d="M110 80 L200 50 L290 80" fill="#292524"/>
+  <rect x="170" y="100" width="60" height="8" fill="#78716C"/>
+  <text x="200" y="270" text-anchor="middle" fill="#78716C" font-family="system-ui" font-size="14">Tailored Suit</text>
+</svg>

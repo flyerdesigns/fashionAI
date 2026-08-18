@@ -1,0 +1,425 @@
+# Staging certification — manual dispatch.
+#
+# Core certification (PostgreSQL, Redis, tests, E2E) runs without provider secrets.
+# Provider validation (S3, Stripe TEST, Gemini) requires GitHub repository secrets.
+# Full GO requires all provider secrets + run_soak=true after core+providers pass.
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   STAGING_AWS_ACCESS_KEY_ID, STAGING_AWS_SECRET_ACCESS_KEY, STAGING_AWS_S3_BUCKET
+#   STAGING_AWS_REGION (optional)
+#   STAGING_STRIPE_SECRET_KEY (sk_test_*), STAGING_STRIPE_WEBHOOK_SECRET
+#   STAGING_STRIPE_STARTER_PRICE_ID, STAGING_STRIPE_PRO_PRICE_ID, STAGING_STRIPE_BUSINESS_PRICE_ID (optional)
+#   STAGING_GEMINI_API_KEY
+#
+# Trigger: Actions → Staging Certification → Run workflow
+
+name: Staging Certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_soak:
+        description: "Run 24h soak (requires all provider checks PASS first)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  certify-core:
+    name: Core certification
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: atelier_ai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      CI: "true"
+      DATABASE_PROVIDER: postgres
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/atelier_ai_test
+      DATABASE_URL_TEST: postgresql://postgres:postgres@localhost:5432/atelier_ai_test
+      REDIS_URL: redis://localhost:6379
+      REDIS_URL_TEST: redis://localhost:6379
+      RATE_LIMIT_PROVIDER: redis
+      QUEUE_PROVIDER: bullmq
+      STORAGE_PROVIDER: local
+      AUTH_SECRET: staging-cert-auth-secret-minimum-32-characters
+      AUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      STAGING_BASE_URL: http://localhost:3000
+      STAGING_ENV: staging
+      PLAYWRIGHT_BASE_URL: http://localhost:3000
+      PLAYWRIGHT_TEST_EMAIL: playwright-user@test.local
+      PLAYWRIGHT_TEST_PASSWORD: PlaywrightTest123!
+      PLAYWRIGHT_ADMIN_TEST_EMAIL: playwright-admin@test.local
+      PLAYWRIGHT_ADMIN_TEST_PASSWORD: PlaywrightAdmin123!
+      PLAYWRIGHT_SUSPENDED_TEST_EMAIL: playwright-suspended@test.local
+      PLAYWRIGHT_SUSPENDED_TEST_PASSWORD: PlaywrightSuspended123!
+      PLAYWRIGHT_SEED: "true"
+      PLAYWRIGHT_WEBSERVER_CMD: npm run start
+      GEMINI_API_KEY: test-gemini-key
+      VIDEO_PROVIDER_API_KEY: test-video-key
+      STRIPE_STARTER_PRICE_ID: price_staging_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Probe infrastructure
+        run: npm run probe:infrastructure
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Validate Prisma schema
+        run: npx prisma validate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Validate database
+        run: npm run validate:database
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: Security tests
+        run: npm run test:security
+
+      - name: Smoke tests
+        run: npm run test:smoke
+
+      - name: Build
+        run: npm run build
+
+      - name: Seed Playwright users
+        run: npm run seed:playwright
+
+      - name: Install Playwright browser
+        run: npx playwright install chromium --with-deps
+
+      - name: Playwright E2E
+        run: npm run test:e2e
+
+      - name: Staging smoke
+        run: npm run staging:smoke
+
+      - name: Production verification (core config)
+        env:
+          VERIFY_PRODUCTION: "true"
+          VERIFY_RUN_TESTS: "true"
+          NODE_ENV: production
+          STORAGE_PROVIDER: s3
+          AWS_S3_BUCKET: ci-staging-bucket
+          AWS_ACCESS_KEY_ID: ci-staging-key
+          AWS_SECRET_ACCESS_KEY: ci-staging-secret
+          STRIPE_SECRET_KEY: sk_test_staging
+          STRIPE_WEBHOOK_SECRET: whsec_staging_test
+          GEMINI_API_KEY: test-gemini-key
+          VIDEO_PROVIDER_API_KEY: test-video-key
+        run: npm run verify:production
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  certify-providers:
+    name: Provider certification
+    needs: certify-core
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: >-
+      secrets.STAGING_AWS_S3_BUCKET != '' &&
+      secrets.STAGING_STRIPE_SECRET_KEY != '' &&
+      secrets.STAGING_GEMINI_API_KEY != ''
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: atelier_ai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      CI: "true"
+      NODE_ENV: production
+      DATABASE_PROVIDER: postgres
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/atelier_ai_test
+      REDIS_URL: redis://localhost:6379
+      RATE_LIMIT_PROVIDER: redis
+      QUEUE_PROVIDER: bullmq
+      STORAGE_PROVIDER: s3
+      AWS_REGION: ${{ secrets.STAGING_AWS_REGION || 'us-east-1' }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.STAGING_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.STAGING_AWS_SECRET_ACCESS_KEY }}
+      AWS_S3_BUCKET: ${{ secrets.STAGING_AWS_S3_BUCKET }}
+      STRIPE_SECRET_KEY: ${{ secrets.STAGING_STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STAGING_STRIPE_WEBHOOK_SECRET }}
+      STRIPE_STARTER_PRICE_ID: ${{ secrets.STAGING_STRIPE_STARTER_PRICE_ID || 'price_staging_test' }}
+      STRIPE_PRO_PRICE_ID: ${{ secrets.STAGING_STRIPE_PRO_PRICE_ID || 'price_staging_pro' }}
+      STRIPE_BUSINESS_PRICE_ID: ${{ secrets.STAGING_STRIPE_BUSINESS_PRICE_ID || 'price_staging_biz' }}
+      GEMINI_API_KEY: ${{ secrets.STAGING_GEMINI_API_KEY }}
+      VIDEO_PROVIDER_API_KEY: ${{ secrets.STAGING_GEMINI_API_KEY }}
+      AUTH_SECRET: staging-cert-auth-secret-minimum-32-characters
+      APP_URL: http://localhost:3000
+      STAGING_ENV: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify staging storage (real S3)
+        run: npm run verify:staging:storage
+
+      - name: Verify staging Stripe (test mode)
+        run: npm run verify:staging:stripe
+
+      - name: Start image worker
+        run: npm run worker:image &
+        env:
+          GENERATION_WORKER_POLL_MS: 1000
+
+      - name: Verify staging generation (real Gemini)
+        run: npm run verify:staging:generation
+        env:
+          VERIFY_STAGING_VIDEO: "true"
+
+      - name: Start video worker
+        run: npm run worker:video &
+        env:
+          VIDEO_WORKER_POLL_MS: 2000
+
+      - name: Worker health
+        run: sleep 10 && npm run workers:health
+
+      - name: Production verification (real providers)
+        env:
+          VERIFY_PRODUCTION: "true"
+          VERIFY_RUN_TESTS: "true"
+        run: npm run verify:production
+
+  certification-summary:
+    name: Certification summary
+    needs: [certify-core, certify-providers]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Report certification status
+        env:
+          CORE_RESULT: ${{ needs.certify-core.result }}
+          PROVIDERS_RESULT: ${{ needs.certify-providers.result }}
+          RUN_SOAK: ${{ github.event.inputs.run_soak }}
+          HAS_S3: ${{ secrets.STAGING_AWS_S3_BUCKET != '' }}
+          HAS_STRIPE: ${{ secrets.STAGING_STRIPE_SECRET_KEY != '' }}
+          HAS_GEMINI: ${{ secrets.STAGING_GEMINI_API_KEY != '' }}
+        run: |
+          echo "=== Staging Certification Summary ==="
+          echo "Core certification:        $CORE_RESULT"
+          echo "Provider certification:    $PROVIDERS_RESULT"
+          echo ""
+          echo "Provider secrets:"
+          echo "  S3:     $([ \"$HAS_S3\" = \"true\" ] && echo CONFIGURED || echo BLOCKED)"
+          echo "  Stripe: $([ \"$HAS_STRIPE\" = \"true\" ] && echo CONFIGURED || echo BLOCKED)"
+          echo "  Gemini: $([ \"$HAS_GEMINI\" = \"true\" ] && echo CONFIGURED || echo BLOCKED)"
+          echo ""
+
+          if [ "$CORE_RESULT" != "success" ]; then
+            echo "FINAL DECISION: NO-GO (core certification failed)"
+            exit 1
+          fi
+
+          if [ "$HAS_S3" != "true" ] || [ "$HAS_STRIPE" != "true" ] || [ "$HAS_GEMINI" != "true" ]; then
+            echo "Provider status: BLOCKED (configure GitHub secrets for full GO)"
+            if [ "$RUN_SOAK" = "true" ]; then
+              echo "FINAL DECISION: NO-GO (soak requested but providers BLOCKED)"
+              exit 1
+            fi
+            echo "FINAL DECISION: NO-GO (core PASS — providers BLOCKED, not production-ready)"
+            exit 1
+          fi
+
+          if [ "$PROVIDERS_RESULT" != "success" ]; then
+            echo "FINAL DECISION: NO-GO (provider certification failed)"
+            exit 1
+          fi
+
+          if [ "$RUN_SOAK" = "true" ]; then
+            echo "Soak: requested — run certify-soak job separately or re-dispatch with soak enabled"
+          fi
+
+          echo "Core + providers PASS. Configure 24h soak for final GO."
+          echo "FINAL DECISION: NO-GO (24h soak not completed in this workflow run)"
+
+  certify-soak:
+    name: 24h soak
+    needs: [certify-core, certify-providers]
+    runs-on: ubuntu-latest
+    timeout-minutes: 1500
+    if: >-
+      github.event.inputs.run_soak == 'true' &&
+      needs.certify-core.result == 'success' &&
+      needs.certify-providers.result == 'success' &&
+      vars.STAGING_BASE_URL != ''
+
+    env:
+      STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      SOAK_DURATION_HOURS: "24"
+      SOAK_INTERVAL_SECONDS: "60"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: 24h soak test
+        run: npm run soak:test
+
+      - name: Upload soak log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soak-test-log
+          path: soak-test-*.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  certification-summary-soak:
+    name: Post-soak validation
+    needs: [certify-core, certify-providers, certify-soak]
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.inputs.run_soak == 'true' &&
+      needs.certify-soak.result == 'success'
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: atelier_ai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      CI: "true"
+      DATABASE_PROVIDER: postgres
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/atelier_ai_test
+      DATABASE_URL_TEST: postgresql://postgres:postgres@localhost:5432/atelier_ai_test
+      AUTH_SECRET: staging-cert-auth-secret-minimum-32-characters
+      AUTH_URL: ${{ vars.STAGING_BASE_URL }}
+      APP_URL: ${{ vars.STAGING_BASE_URL }}
+      STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      PLAYWRIGHT_SKIP_WEBSERVER: "true"
+      PLAYWRIGHT_TEST_EMAIL: playwright-user@test.local
+      PLAYWRIGHT_TEST_PASSWORD: PlaywrightTest123!
+      PLAYWRIGHT_ADMIN_TEST_EMAIL: playwright-admin@test.local
+      PLAYWRIGHT_ADMIN_TEST_PASSWORD: PlaywrightAdmin123!
+      PLAYWRIGHT_SUSPENDED_TEST_EMAIL: playwright-suspended@test.local
+      PLAYWRIGHT_SUSPENDED_TEST_PASSWORD: PlaywrightSuspended123!
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Post-soak staging smoke
+        run: npm run staging:smoke
+
+      - name: Post-soak Playwright E2E
+        run: npx playwright install chromium --with-deps && npm run test:e2e

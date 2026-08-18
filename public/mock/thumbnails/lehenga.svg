@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#FEF3C7"/>
+  <ellipse cx="200" cy="180" rx="100" ry="60" fill="#FDE68A"/>
+  <path d="M100 120 Q200 60 300 120 L320 200 Q200 250 80 200 Z" fill="#F59E0B" opacity="0.6"/>
+  <text x="200" y="270" text-anchor="middle" fill="#92400E" font-family="system-ui" font-size="14">Lehenga</text>
+</svg>

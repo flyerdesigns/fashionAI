@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500" viewBox="0 0 400 500">
+  <rect width="400" height="500" fill="#7dd3fc"/>
+  <rect x="40" y="60" width="320" height="340" rx="12" fill="#0369a1" opacity="0.25"/>
+  <circle cx="200" cy="160" r="50" fill="#0369a1" opacity="0.4"/>
+  <rect x="120" y="230" width="160" height="140" rx="8" fill="#0369a1" opacity="0.35"/>
+  <text x="200" y="460" text-anchor="middle" fill="#78716c" font-family="system-ui,sans-serif" font-size="13">Beach</text>
+  <text x="200" y="480" text-anchor="middle" fill="#a8a29e" font-family="system-ui,sans-serif" font-size="10">Preset reference</text>
+</svg>

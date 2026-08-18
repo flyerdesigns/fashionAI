@@ -1,0 +1,407 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  image        String?
+  passwordHash String?
+  provider     String
+  role         String   @default("user")
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  products            Product[]
+  photoshoots         Photoshoot[]
+  generationJobs      GenerationJob[]
+  creditAccount       CreditAccount?
+  creditTransactions  CreditTransaction[]
+  creditReservations  CreditReservation[]
+  usageRecords        UsageRecord[]
+  stripeCustomer      StripeCustomer?
+  subscriptions       Subscription[]
+  videos              Video[]
+  videoGenerationJobs VideoGenerationJob[]
+  auditLogs           AuditLog[]           @relation("AuditLogActor")
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+model Product {
+  id                    String   @id @default(uuid())
+  userId                String
+  name                  String
+  type                  String
+  category              String
+  gender                String
+  color                 String
+  customColor           String?
+  description           String?
+  brand                 String?
+  status                String
+  originalFileName      String
+  originalImageKey      String
+  originalImageMimeType String
+  originalImageSize     Int
+  width                 Int
+  height                Int
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  photoshoots Photoshoot[]
+  videos      Video[]
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([originalImageKey])
+}
+
+model Photoshoot {
+  id                   String   @id @default(uuid())
+  userId               String
+  productId            String
+  productNameSnapshot  String
+  clothingThumbnailUrl String?
+  configuration        Json
+  generationId         String
+  generationJobId      String?
+  status               String
+  provider             String
+  totalImages          Int      @default(0)
+  completedImages      Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  product          Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  generationJobs   GenerationJob[]
+  generationImages GenerationImage[]
+  videos           Video[]
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([productId])
+}
+
+model Video {
+  id                  String    @id @default(uuid())
+  userId              String
+  productId           String?
+  photoshootId        String?
+  sourceImageId       String?
+  sourceType          String
+  sourceStorageKey    String?
+  title               String
+  status              String
+  videoType           String
+  provider            String
+  providerJobId       String?
+  prompt              String
+  negativePrompt      String?
+  duration            Int
+  aspectRatio         String
+  resolution          String
+  motionPreset        String?
+  cameraMovement      String
+  videoStyle          String
+  configuration       Json
+  storageKey          String?
+  thumbnailStorageKey String?
+  creditsUsed         Int       @default(0)
+  errorCode           String?
+  errorMessage        String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  completedAt         DateTime?
+
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  product        Product?             @relation(fields: [productId], references: [id], onDelete: SetNull)
+  photoshoot     Photoshoot?          @relation(fields: [photoshootId], references: [id], onDelete: SetNull)
+  generationJobs VideoGenerationJob[]
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@index([photoshootId])
+  @@index([productId])
+  @@index([storageKey])
+}
+
+model VideoGenerationJob {
+  id            String    @id @default(uuid())
+  userId        String
+  videoId       String
+  status        String
+  provider      String
+  providerJobId String?
+  progress      Int       @default(0)
+  requestId     String?   @unique
+  attempts      Int       @default(0)
+  lockedAt      DateTime?
+  lockedBy      String?
+  errorCode     String?
+  errorMessage  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  startedAt     DateTime?
+  completedAt   DateTime?
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  video             Video              @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  creditReservation CreditReservation?
+
+  @@index([userId])
+  @@index([videoId])
+  @@index([status])
+  @@index([status, lockedAt])
+}
+
+model GenerationJob {
+  id              String    @id @default(uuid())
+  userId          String
+  photoshootId    String
+  productId       String
+  provider        String
+  type            String
+  status          String
+  requestId       String?   @unique
+  totalImages     Int       @default(0)
+  completedImages Int       @default(0)
+  failedImages    Int       @default(0)
+  currentImage    Int?
+  progress        Int       @default(0)
+  error           String?
+  errorCategory   String?
+  targetImageId   String?
+  lockedAt        DateTime?
+  lockedBy        String?
+  createdAt       DateTime  @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  updatedAt       DateTime  @updatedAt
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  photoshoot        Photoshoot         @relation(fields: [photoshootId], references: [id], onDelete: Restrict)
+  generationImages  GenerationImage[]
+  creditReservation CreditReservation?
+  usageRecords      UsageRecord[]
+
+  @@index([userId])
+  @@index([photoshootId])
+  @@index([status])
+  @@index([status, lockedAt])
+}
+
+model GenerationImage {
+  id              String    @id @default(uuid())
+  generationJobId String
+  photoshootId    String
+  imageAssetId    String?
+  poseId          String
+  poseName        String
+  index           Int
+  status          String
+  storageKey      String?
+  mimeType        String?
+  width           Int?
+  height          Int?
+  error           String?
+  errorCategory   String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  generationJob GenerationJob @relation(fields: [generationJobId], references: [id], onDelete: Cascade)
+  photoshoot    Photoshoot    @relation(fields: [photoshootId], references: [id], onDelete: Restrict)
+  usageRecords  UsageRecord[]
+
+  @@index([generationJobId])
+  @@index([photoshootId])
+  @@index([storageKey])
+  @@index([imageAssetId])
+}
+
+model CreditAccount {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  balance          Int      @default(0)
+  reserved         Int      @default(0)
+  lifetimeGranted  Int      @default(0)
+  lifetimeConsumed Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  transactions CreditTransaction[]
+  reservations CreditReservation[]
+
+  @@index([userId])
+}
+
+model CreditTransaction {
+  id              String   @id @default(uuid())
+  userId          String
+  creditAccountId String
+  type            String
+  amount          Int
+  balanceBefore   Int
+  balanceAfter    Int
+  referenceType   String?
+  referenceId     String?
+  description     String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  creditAccount CreditAccount @relation(fields: [creditAccountId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([creditAccountId])
+  @@index([referenceType, referenceId])
+  @@index([type])
+}
+
+model CreditReservation {
+  id                   String    @id @default(uuid())
+  userId               String
+  creditAccountId      String
+  generationJobId      String?   @unique
+  videoGenerationJobId String?   @unique
+  credits              Int
+  consumedCredits      Int       @default(0)
+  releasedCredits      Int       @default(0)
+  status               String
+  createdAt            DateTime  @default(now())
+  releasedAt           DateTime?
+  consumedAt           DateTime?
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  creditAccount      CreditAccount       @relation(fields: [creditAccountId], references: [id], onDelete: Restrict)
+  generationJob      GenerationJob?      @relation(fields: [generationJobId], references: [id], onDelete: Restrict)
+  videoGenerationJob VideoGenerationJob? @relation(fields: [videoGenerationJobId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model UsageRecord {
+  id                   String   @id @default(uuid())
+  userId               String
+  generationJobId      String?
+  videoId              String?
+  videoGenerationJobId String?
+  photoshootId         String?
+  generationImageId    String?
+  provider             String
+  model                String?
+  operation            String
+  credits              Int
+  status               String
+  metadata             Json?
+  createdAt            DateTime @default(now())
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  generationJob   GenerationJob?   @relation(fields: [generationJobId], references: [id], onDelete: SetNull)
+  generationImage GenerationImage? @relation(fields: [generationImageId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([generationJobId])
+  @@index([videoId])
+  @@index([operation])
+}
+
+model StripeCustomer {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  stripeCustomerId String   @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([stripeCustomerId])
+}
+
+model Subscription {
+  id                   String    @id @default(uuid())
+  userId               String
+  stripeCustomerId     String
+  stripeSubscriptionId String    @unique
+  stripePriceId        String
+  plan                 String
+  status               String
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  canceledAt           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([status])
+  @@index([stripeCustomerId])
+}
+
+model StripeEvent {
+  id            String    @id @default(uuid())
+  stripeEventId String    @unique
+  type          String
+  processed     Boolean   @default(false)
+  processedAt   DateTime?
+  payload       Json
+  createdAt     DateTime  @default(now())
+
+  @@index([type])
+  @@index([processed])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  targetUserId String?
+  action       String
+  resourceType String?
+  resourceId   String?
+  metadata     Json?
+  ipAddress    String?
+  requestId    String?
+  createdAt    DateTime @default(now())
+
+  actor User? @relation("AuditLogActor", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([targetUserId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([resourceType, resourceId])
+  @@index([userId, createdAt])
+  @@index([requestId])
+}
+
+model WorkerHeartbeat {
+  id         String   @id @default(uuid())
+  workerName String   @unique
+  workerId   String
+  status     String
+  lastSeenAt DateTime
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([lastSeenAt])
+  @@index([status])
+}

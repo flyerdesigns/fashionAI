@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#E7E5E4"/>
+  <rect x="120" y="60" width="160" height="180" rx="8" fill="#D6D3D1"/>
+  <path d="M120 90 L200 60 L280 90 L280 240 L120 240 Z" fill="#A8A29E"/>
+  <text x="200" y="270" text-anchor="middle" fill="#78716C" font-family="system-ui" font-size="14">Linen Shirt</text>
+</svg>
