@@ -87,12 +87,12 @@ Repository connected and pushed:
 - **GitHub:** https://github.com/flyerdesigns/fashionAI
 - **CI #11:** PASS on `43a1d0b` (full green)
 
-Configure secrets and dispatch workflow (see `docs/STEP_20.md`, `docs/STEP_27.md`):
+Configure secrets and dispatch workflow (see `docs/STEP_20.md`, `docs/STEP_27.md`, `docs/STEP_28.md`):
 
 - [x] GitHub repository URL provided and remote configured
 - [x] Code pushed to GitHub
-- [x] CI green on `main`
-- [ ] Staging Certification dispatched (`run_soak=false`) — see `docs/STEP_27.md`
+- [x] CI green on `main` (CI #11 on `43a1d0b`)
+- [ ] Staging Certification dispatched (`run_soak=false`) — **manual dispatch required** (`docs/STEP_28.md`)
 - [ ] `certify-core` job PASS
 - [ ] `STAGING_*` secrets configured
 - [ ] Staging application deployed
