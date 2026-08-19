@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Session } from "next-auth";
 import { auth } from "@/auth";
 import { checkRateLimit, resolveRateLimitScope } from "@/lib/rate-limit";
 import { createRequestId, getRequestIdFromHeaders } from "@/lib/logging/logger";
@@ -8,6 +9,28 @@ import {
   isSuspendedPageAllowed,
   USER_ACCOUNT_STATUS,
 } from "@/lib/auth/account-status";
+import { isPostgresEnabled } from "@/lib/db/config";
+import { userRepository } from "@/lib/users/repository";
+
+async function resolveProxyAuthClaims(session: Session | null): Promise<{
+  role: string;
+  status: string;
+} | null> {
+  if (!session?.user?.id) return null;
+
+  let role = session.user.role ?? "user";
+  let status = session.user.status ?? USER_ACCOUNT_STATUS.ACTIVE;
+
+  if (isPostgresEnabled()) {
+    const record = await userRepository.findById(session.user.id);
+    if (record) {
+      role = record.role;
+      status = record.status;
+    }
+  }
+
+  return { role, status };
+}
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -45,8 +68,9 @@ export default auth(async (req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
   const requestId = getRequestIdFromHeaders(req.headers) ?? createRequestId();
-  const isSuspended =
-    isLoggedIn && req.auth?.user?.status === USER_ACCOUNT_STATUS.SUSPENDED;
+  const authClaims = isLoggedIn ? await resolveProxyAuthClaims(req.auth) : null;
+  const isSuspended = authClaims?.status === USER_ACCOUNT_STATUS.SUSPENDED;
+  const userRole = authClaims?.role;
 
   const attachRequestId = (response: NextResponse) => {
     response.headers.set("X-Request-ID", requestId);
@@ -130,12 +154,12 @@ export default auth(async (req) => {
   if (
     (pathname === "/admin" || pathname.startsWith("/admin/")) &&
     isLoggedIn &&
-    !isAdminRole(req.auth?.user?.role)
+    !isAdminRole(userRole)
   ) {
     return attachRequestId(NextResponse.redirect(new URL("/dashboard", req.url)));
   }
 
-  if (pathname.startsWith("/api/admin/") && isLoggedIn && !isAdminRole(req.auth?.user?.role)) {
+  if (pathname.startsWith("/api/admin/") && isLoggedIn && !isAdminRole(userRole)) {
     return attachRequestId(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
   }
 
