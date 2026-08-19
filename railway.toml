@@ -11,7 +11,7 @@ buildCommand = "npm run build"
 
 [deploy]
 startCommand = "sh scripts/railway-start.sh"
-preDeployCommand = ["npx prisma migrate deploy", "npm run seed:playwright"]
+preDeployCommand = ["npx prisma migrate deploy"]
 healthcheckPath = "/api/health/live"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
