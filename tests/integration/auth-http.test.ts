@@ -13,7 +13,16 @@ import { buildAuthSession, mockAuthForUser } from "./helpers/auth-session";
 
 vi.mock("@/auth", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@/auth")>();
-  return { ...mod, auth: vi.fn() };
+  return {
+    ...mod,
+    auth: vi.fn(),
+    signIn: vi.fn(async (_provider: string, options?: { password?: string }) => {
+      if (options?.password === "wrong-password") {
+        return { error: "CredentialsSignin" };
+      }
+      return {};
+    }),
+  };
 });
 
 describeIntegration("HTTP authentication integration", () => {

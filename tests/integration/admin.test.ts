@@ -1,4 +1,5 @@
 import { describeIntegration } from "./setup";
+import { vi } from "vitest";
 import { createTestUser } from "./helpers/factories";
 import { mockAuthForUser } from "./helpers/auth-session";
 import { isAdminRole } from "@/lib/admin/config";
@@ -6,6 +7,11 @@ import { adminGrantCredits } from "@/lib/credits/admin-adjustment";
 import { updateUserRole } from "@/lib/admin/users";
 import { getTestPrisma } from "@/lib/test/prisma-client";
 import { sanitizeAuditMetadata } from "@/lib/audit/sanitize";
+
+vi.mock("@/auth", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@/auth")>();
+  return { ...mod, auth: vi.fn() };
+});
 
 describeIntegration("admin integration", () => {
   it("allows admin role check from database", async () => {

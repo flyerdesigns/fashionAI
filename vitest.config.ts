@@ -33,6 +33,8 @@ export default defineConfig({
           name: "integration",
           include: ["tests/integration/**/*.test.ts"],
           setupFiles: ["tests/integration/setup.ts"],
+          fileParallelism: false,
+          maxWorkers: 1,
         },
       },
       {
@@ -42,6 +44,8 @@ export default defineConfig({
           name: "security",
           include: ["tests/security/**/*.test.ts"],
           setupFiles: ["tests/integration/setup.ts"],
+          fileParallelism: false,
+          maxWorkers: 1,
         },
       },
       {
