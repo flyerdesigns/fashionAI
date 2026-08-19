@@ -124,23 +124,38 @@ export async function cleanupIntegrationTestData(): Promise<void> {
   const userIds = users.map((u) => u.id);
   if (userIds.length === 0) return;
 
-  await prisma.auditLog.deleteMany({ where: { userId: { in: userIds } } });
-  await prisma.auditLog.deleteMany({ where: { targetUserId: { in: userIds } } });
+  const creditAccounts = await prisma.creditAccount.findMany({
+    where: { userId: { in: userIds } },
+    select: { id: true },
+  });
+  const creditAccountIds = creditAccounts.map((account) => account.id);
+
+  await prisma.auditLog.deleteMany({
+    where: { OR: [{ userId: { in: userIds } }, { targetUserId: { in: userIds } }] },
+  });
   await prisma.usageRecord.deleteMany({ where: { userId: { in: userIds } } });
-  await prisma.creditTransaction.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.creditReservation.deleteMany({ where: { userId: { in: userIds } } });
-  await prisma.creditAccount.deleteMany({ where: { userId: { in: userIds } } });
-  await prisma.stripeEvent.deleteMany({});
-  await prisma.subscription.deleteMany({ where: { userId: { in: userIds } } });
-  await prisma.stripeCustomer.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.creditTransaction.deleteMany({
+    where: {
+      OR: [{ userId: { in: userIds } }, { creditAccountId: { in: creditAccountIds } }],
+    },
+  });
   await prisma.generationImage.deleteMany({
     where: { photoshoot: { userId: { in: userIds } } },
   });
   await prisma.generationJob.deleteMany({ where: { userId: { in: userIds } } });
-  await prisma.photoshoot.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.videoGenerationJob.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.video.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.photoshoot.deleteMany({
+    where: {
+      OR: [{ userId: { in: userIds } }, { product: { userId: { in: userIds } } }],
+    },
+  });
   await prisma.product.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.creditAccount.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.stripeEvent.deleteMany({});
+  await prisma.subscription.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.stripeCustomer.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.workerHeartbeat.deleteMany({});
   await prisma.user.deleteMany({ where: { id: { in: userIds } } });
 }

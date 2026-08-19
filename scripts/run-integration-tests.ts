@@ -9,7 +9,7 @@ assertIntegrationTestEnvironment();
 
 const result = spawnSync(
   "npx",
-  ["vitest", "run", "--project", "integration"],
+  ["vitest", "run", "--project", "integration", "--maxWorkers=1", "--fileParallelism=false"],
   { stdio: "inherit", shell: true, env: process.env },
 );
 
