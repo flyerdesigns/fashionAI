@@ -85,6 +85,8 @@ jobs:
       GEMINI_API_KEY: test-gemini-key
       VIDEO_PROVIDER_API_KEY: test-video-key
       STRIPE_STARTER_PRICE_ID: price_staging_test
+      STRIPE_SECRET_KEY: sk_test_staging
+      STRIPE_WEBHOOK_SECRET: whsec_staging_test
 
     steps:
       - uses: actions/checkout@v4
@@ -216,7 +218,6 @@ jobs:
 
     env:
       CI: "true"
-      NODE_ENV: production
       DATABASE_PROVIDER: postgres
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/atelier_ai_test
       REDIS_URL: redis://localhost:6379
@@ -256,6 +257,8 @@ jobs:
         run: npx prisma migrate deploy
 
       - name: Build
+        env:
+          NODE_ENV: production
         run: npm run build
 
       - name: Verify staging storage (real S3)
@@ -286,6 +289,7 @@ jobs:
         env:
           VERIFY_PRODUCTION: "true"
           VERIFY_RUN_TESTS: "true"
+          NODE_ENV: production
         run: npm run verify:production
 
   certification-summary:
