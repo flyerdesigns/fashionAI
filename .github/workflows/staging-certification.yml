@@ -133,14 +133,31 @@ jobs:
       - name: Seed Playwright users
         run: npm run seed:playwright
 
+      - name: Start application for smoke and E2E
+        run: npm run start &
+
+      - name: Wait for application health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3000/api/health/live > /dev/null; then
+              echo "Application ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Application failed to start within 120s"
+          exit 1
+
+      - name: Staging smoke
+        run: npm run staging:smoke
+
       - name: Install Playwright browser
         run: npx playwright install chromium --with-deps
 
       - name: Playwright E2E
+        env:
+          PLAYWRIGHT_SKIP_WEBSERVER: "true"
         run: npm run test:e2e
-
-      - name: Staging smoke
-        run: npm run staging:smoke
 
       - name: Production verification (core config)
         env:

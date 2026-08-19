@@ -82,23 +82,21 @@ Complete before production deployment. All items must be verified in **staging**
 
 ## Step 20 — Publish & Execute GitHub Certification
 
-Local repository prepared (`FahionAI/.git`, commit on `main`).
+Repository connected and pushed:
 
-**BLOCKED until owner provides GitHub repository URL:**
+- **GitHub:** https://github.com/flyerdesigns/fashionAI
+- **CI #11:** PASS on `43a1d0b` (full green)
 
-```bash
-git remote add origin <REAL_REPOSITORY_URL>
-git push -u origin main
-```
+Configure secrets and dispatch workflow (see `docs/STEP_20.md`, `docs/STEP_27.md`):
 
-Then configure secrets and dispatch workflow (see `docs/STEP_20.md`):
-
-- [ ] GitHub repository URL provided and remote configured
-- [ ] Code pushed to GitHub
+- [x] GitHub repository URL provided and remote configured
+- [x] Code pushed to GitHub
+- [x] CI green on `main`
+- [ ] Staging Certification dispatched (`run_soak=false`) — see `docs/STEP_27.md`
+- [ ] `certify-core` job PASS
 - [ ] `STAGING_*` secrets configured
 - [ ] Staging application deployed
 - [ ] `STAGING_BASE_URL` variable set
-- [ ] `certify-core` job PASS (Playwright 0 skip)
 - [ ] `certify-providers` job PASS
 - [ ] 24h soak completed
 - [ ] `FINAL DECISION: GO` in certification summary
