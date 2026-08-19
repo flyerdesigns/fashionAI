@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
     "test:integration": "tsx scripts/run-integration-tests.ts",
-    "test:security": "vitest run --project security",
+    "test:security": "vitest run --project security --maxWorkers=1 --fileParallelism=false",
     "test:smoke": "vitest run --project smoke",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
