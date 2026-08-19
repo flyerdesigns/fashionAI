@@ -1,6 +1,5 @@
-import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
-import { authConfig } from "./auth.config";
+import { auth } from "@/auth";
 import { checkRateLimit, resolveRateLimitScope } from "@/lib/rate-limit";
 import { createRequestId, getRequestIdFromHeaders } from "@/lib/logging/logger";
 import { isAdminRole } from "@/lib/admin/config";
@@ -9,8 +8,6 @@ import {
   isSuspendedPageAllowed,
   USER_ACCOUNT_STATUS,
 } from "@/lib/auth/account-status";
-
-const { auth } = NextAuth(authConfig);
 
 const PROTECTED_PREFIXES = [
   "/dashboard",

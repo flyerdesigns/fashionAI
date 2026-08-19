@@ -36,8 +36,8 @@ describe("memory rate limiter", () => {
     expect(resolveRateLimitScope("/api/stripe/webhook")).toBeNull();
   });
 
-  it("middleware fail-closed policy exists for production redis outages", () => {
-    const source = readFileSync(path.join(process.cwd(), "middleware.ts"), "utf8");
+  it("proxy fail-closed policy exists for production redis outages", () => {
+    const source = readFileSync(path.join(process.cwd(), "proxy.ts"), "utf8");
     expect(source).toContain('process.env.RATE_LIMIT_PROVIDER === "redis"');
     expect(source).toContain("503");
   });

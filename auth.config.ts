@@ -17,7 +17,9 @@ export const authConfig = {
     },
     session({ session, token }) {
       if (session.user && token.id) {
-        session.user.id = token.id;
+        session.user.id = token.id as string;
+        session.user.role = (token.role as string) ?? "user";
+        session.user.status = (token.status as string) ?? "active";
       }
       return session;
     },
