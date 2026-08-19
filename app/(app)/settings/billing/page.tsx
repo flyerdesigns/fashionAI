@@ -2,7 +2,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { requireUser } from "@/lib/auth";
 import { creditService } from "@/lib/credits";
-import { billingService, getPlan } from "@/lib/billing";
+import { billingService, getPlan, getPaidPlans } from "@/lib/billing";
 import { BillingPlans } from "@/components/billing/BillingPlans";
 import { formatDate } from "@/lib/utils";
 import { isPostgresEnabled } from "@/lib/db/config";
@@ -25,6 +25,7 @@ export default async function BillingSettingsPage({ searchParams }: BillingPageP
     : { subscription: null, plan: "free" as PlanId };
 
   const planDef = getPlan(plan);
+  const paidPlans = getPaidPlans();
 
   return (
     <>
@@ -99,7 +100,7 @@ export default async function BillingSettingsPage({ searchParams }: BillingPageP
         <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
           <h2 className="font-display text-lg font-medium text-stone-900">Plans</h2>
           <div className="mt-6">
-            <BillingPlans currentPlan={plan} />
+            <BillingPlans currentPlan={plan} plans={paidPlans} />
           </div>
         </section>
       </div>

@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { getPaidPlans, type PlanId } from "@/lib/billing/plans";
+import type { PlanDefinition, PlanId } from "@/lib/billing/plans";
 
 interface BillingPlansProps {
   currentPlan: PlanId;
+  plans: PlanDefinition[];
 }
 
-export function BillingPlans({ currentPlan }: BillingPlansProps) {
+export function BillingPlans({ currentPlan, plans }: BillingPlansProps) {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const plans = getPaidPlans();
 
   const handleUpgrade = async (planId: string) => {
     setLoadingPlan(planId);
