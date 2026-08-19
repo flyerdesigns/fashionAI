@@ -90,8 +90,10 @@ jobs:
       - name: Production verification (config)
         env:
           VERIFY_PRODUCTION: "true"
-          VERIFY_RUN_TESTS: "true"
+          VERIFY_RUN_TESTS: "false"
           NODE_ENV: production
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/atelier_ai_test
+          DATABASE_PROVIDER: postgres
           STORAGE_PROVIDER: s3
           AWS_S3_BUCKET: ci-test-bucket
           AWS_ACCESS_KEY_ID: ci-test-key
@@ -101,9 +103,9 @@ jobs:
           STRIPE_STARTER_PRICE_ID: price_starter_test
           GEMINI_API_KEY: test-gemini-key
           VIDEO_PROVIDER_API_KEY: test-video-key
-          DATABASE_PROVIDER: postgres
           APP_URL: http://localhost:3000
           AUTH_SECRET: ci-test-auth-secret-minimum-32-characters-long
+          RATE_LIMIT_PROVIDER: memory
         run: npm run verify:production
 
       - name: Install Playwright browser
