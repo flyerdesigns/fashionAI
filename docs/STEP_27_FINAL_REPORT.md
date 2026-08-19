@@ -3,16 +3,15 @@
 **Date:** 2026-08-19  
 **Repository:** https://github.com/flyerdesigns/fashionAI  
 **Audit commit:** `43a1d0b`  
-**Workflow fix commit:** pending push (staging smoke server lifecycle)
+**Workflow fix commit:** `6a28327` (pushed to `origin/main`)
 
 ---
 
 ## STEP 27 — STAGING CORE CERTIFICATION
 
 ```
-Repository:              CONNECTED — main @ 43a1d0b, origin/main synced (pre-fix)
-CI:                      PASS — CI #11 fully green on 43a1d0b (Build, Lint, Unit,
-                         Integration, Security, Smoke, Production verify, Playwright 0 skip)
+Repository:              CONNECTED — main @ 6a28327 (workflow fix pushed)
+CI:                      PASS — CI #11 on 43a1d0b; new CI run triggered by 6a28327 push (pending)
 
 Core Certification:      NOT RUN — workflow dispatch blocked locally (no gh, no token);
                          manual GitHub UI dispatch required after workflow fix push
