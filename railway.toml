@@ -1,0 +1,16 @@
+# Railway staging — web service (default linked service)
+# Image/video workers: create two additional Railway services from this repo with:
+#   npm run worker:image
+#   npm run worker:video
+# Add PostgreSQL + Redis plugins to the project; reference their URLs in env vars.
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm ci --legacy-peer-deps && npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/api/health/live"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
