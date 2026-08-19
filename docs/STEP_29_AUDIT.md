@@ -4,49 +4,43 @@
 
 ---
 
-## Section 1 — GitHub tooling
+## Authentication
 
-| Check | Result |
-|-------|--------|
-| `gh` (before Step 29) | Not installed |
-| Homebrew | Available (`/opt/homebrew/bin/brew`) |
-| `git` | Available; `credential.helper=osxkeychain` |
-| GitHub keychain entry | Present for `github.com` (git HTTPS push works) |
-| `gh` (after install) | **2.97.0** installed via `brew install gh` |
-| `gh auth status` | **Not logged in** |
+| Step | Result |
+|------|--------|
+| `gh` install | **2.97.0** via Homebrew |
+| `gh auth login` | **Completed by user** — account `flyerdesigns` |
+| `gh repo view flyerdesigns/fashionAI` | **PASS** |
+| `gh workflow list` | CI + Staging Certification active |
 
-## Section 2 — Authentication
-
-`gh auth login` requires **browser/device-code interaction** and cannot be completed autonomously in this session.
-
-**User action required** (run in Terminal):
+## Dispatch
 
 ```bash
-gh auth login
+gh workflow run staging-certification.yml --repo flyerdesigns/fashionAI --ref main -f run_soak=false
 ```
 
-Choose:
+| Item | Value |
+|------|-------|
+| Run ID | 32249216663 |
+| URL | https://github.com/flyerdesigns/fashionAI/actions/runs/32249216663 |
+| Commit | `9f2d839` |
+| Monitored | Yes — `gh run watch` until completion |
 
-1. **GitHub.com**
-2. **HTTPS**
-3. **Login with a web browser** (do not paste a PAT into chat or terminal logs)
+## Job results (verified)
 
-Complete the browser prompt, then verify:
+| Job | Conclusion |
+|-----|------------|
+| Core certification | **success** |
+| Provider certification | **failure** (npm ci / missing secrets) |
+| Certification summary | **failure** (NO-GO — providers BLOCKED) |
+| 24h soak | **skipped** |
+| Post-soak validation | **skipped** |
 
-```bash
-gh auth status
-gh repo view flyerdesigns/fashionAI
-gh workflow list --repo flyerdesigns/fashionAI
-```
+## Workflow fixes after run (`a5889c0`)
 
-## Section 3 — Push status
+1. **`certify-core`:** Added placeholder `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` so billing checkout E2E is not skipped.
+2. **`certify-providers`:** Removed job-level `NODE_ENV=production` so `npm ci` installs Prisma (devDependency).
 
-Local commit `0b62c4e` (Step 28 docs) **pushed** to `origin/main`.
+## Application code
 
-## Section 4 — Workflow dispatch
-
-**NOT RUN** — blocked until `gh auth login` completes.
-
-## Section 5 — Code changes
-
-**None** to application code, tests, or CI workflows.
+**No changes.**

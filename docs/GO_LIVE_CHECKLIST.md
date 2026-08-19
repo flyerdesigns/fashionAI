@@ -93,9 +93,9 @@ Configure secrets and dispatch workflow (see `docs/STEP_28.md`, `docs/STEP_29.md
 - [x] Code pushed to GitHub
 - [x] CI green on `main` (CI #11 on `43a1d0b`)
 - [x] GitHub CLI installed (`gh` 2.97.0)
-- [ ] GitHub CLI authenticated (`gh auth login`)
-- [ ] Staging Certification dispatched (`run_soak=false`)
-- [ ] `certify-core` job PASS
+- [x] GitHub CLI authenticated (`gh auth login`)
+- [x] Staging Certification dispatched (`run_soak=false`) — run [32249216663](https://github.com/flyerdesigns/fashionAI/actions/runs/32249216663)
+- [x] `certify-core` job PASS
 - [ ] `STAGING_*` secrets configured
 - [ ] Staging application deployed
 - [ ] `STAGING_BASE_URL` variable set
