@@ -95,10 +95,11 @@ Configure secrets and dispatch workflow (see `docs/STEP_28.md`, `docs/STEP_29.md
 - [x] GitHub CLI installed (`gh` 2.97.0)
 - [x] GitHub CLI authenticated (`gh auth login`)
 - [x] Staging Certification dispatched (`run_soak=false`) — run [32249216663](https://github.com/flyerdesigns/fashionAI/actions/runs/32249216663)
-- [x] `certify-core` job PASS
+- [x] `certify-core` job PASS (run [32249216663](https://github.com/flyerdesigns/fashionAI/actions/runs/32249216663))
+- [ ] Real staging infrastructure provisioned — see `docs/STEP_30.md`
 - [ ] `STAGING_*` secrets configured
-- [ ] Staging application deployed
-- [ ] `STAGING_BASE_URL` variable set
+- [ ] Staging application deployed (web + image worker + video worker)
+- [ ] `STAGING_BASE_URL` variable set (HTTPS)
 - [ ] `certify-providers` job PASS
 - [ ] 24h soak completed
 - [ ] `FINAL DECISION: GO` in certification summary
