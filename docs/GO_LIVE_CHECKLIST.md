@@ -97,7 +97,7 @@ Configure secrets and dispatch workflow (see `docs/STEP_28.md`, `docs/STEP_29.md
 - [x] Staging Certification dispatched (`run_soak=false`) — run [32249216663](https://github.com/flyerdesigns/fashionAI/actions/runs/32249216663)
 - [x] `certify-core` job PASS (run [32249216663](https://github.com/flyerdesigns/fashionAI/actions/runs/32249216663))
 - [ ] Real staging infrastructure provisioned — see `docs/STEP_30.md`, `docs/STEP_31.md`
-- [ ] Railway (or host) CLI installed and authenticated
+- [ ] Railway CLI installed and authenticated on this machine (`railway whoami` must succeed)
 - [ ] `railway.toml` deployed via Railway web + 2 worker services
 - [ ] `STAGING_*` secrets configured
 - [ ] Staging application deployed (web + image worker + video worker)
