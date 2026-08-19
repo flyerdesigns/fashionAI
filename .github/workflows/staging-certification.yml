@@ -171,10 +171,7 @@ jobs:
     needs: certify-core
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    if: >-
-      secrets.STAGING_AWS_S3_BUCKET != '' &&
-      secrets.STAGING_STRIPE_SECRET_KEY != '' &&
-      secrets.STAGING_GEMINI_API_KEY != ''
+    if: ${{ secrets.STAGING_AWS_S3_BUCKET != '' && secrets.STAGING_STRIPE_SECRET_KEY != '' && secrets.STAGING_GEMINI_API_KEY != '' }}
 
     services:
       postgres:
@@ -332,11 +329,7 @@ jobs:
     needs: [certify-core, certify-providers]
     runs-on: ubuntu-latest
     timeout-minutes: 1500
-    if: >-
-      github.event.inputs.run_soak == 'true' &&
-      needs.certify-core.result == 'success' &&
-      needs.certify-providers.result == 'success' &&
-      vars.STAGING_BASE_URL != ''
+    if: ${{ github.event.inputs.run_soak == 'true' && needs.certify-core.result == 'success' && needs.certify-providers.result == 'success' && vars.STAGING_BASE_URL != '' }}
 
     env:
       STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
@@ -370,9 +363,7 @@ jobs:
     name: Post-soak validation
     needs: [certify-core, certify-providers, certify-soak]
     runs-on: ubuntu-latest
-    if: >-
-      github.event.inputs.run_soak == 'true' &&
-      needs.certify-soak.result == 'success'
+    if: ${{ github.event.inputs.run_soak == 'true' && needs.certify-soak.result == 'success' }}
 
     services:
       postgres:
