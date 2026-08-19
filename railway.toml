@@ -10,7 +10,8 @@ builder = "NIXPACKS"
 buildCommand = "npm run build"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "sh scripts/railway-start.sh"
+preDeployCommand = ["npx prisma migrate deploy", "npm run seed:playwright"]
 healthcheckPath = "/api/health/live"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
