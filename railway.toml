@@ -6,7 +6,8 @@
 
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm ci --legacy-peer-deps && npm run build"
+# Nixpacks already runs `npm ci` (respects .npmrc legacy-peer-deps). Only build here.
+buildCommand = "npm run build"
 
 [deploy]
 startCommand = "npm start"
