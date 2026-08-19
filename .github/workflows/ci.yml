@@ -124,6 +124,13 @@ jobs:
 
       - name: Playwright E2E (deterministic)
         env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/atelier_ai_test
+          DATABASE_PROVIDER: postgres
+          AUTH_SECRET: ci-test-auth-secret-minimum-32-characters-long
+          AUTH_URL: http://localhost:3000
+          APP_URL: http://localhost:3000
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          STORAGE_PROVIDER: local
           PLAYWRIGHT_TEST_EMAIL: playwright-user@test.local
           PLAYWRIGHT_TEST_PASSWORD: PlaywrightTest123!
           PLAYWRIGHT_ADMIN_TEST_EMAIL: playwright-admin@test.local

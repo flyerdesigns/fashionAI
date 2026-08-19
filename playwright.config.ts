@@ -10,7 +10,9 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   timeout: 60_000,
   expect: { timeout: 15_000 },
-  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
+  reporter: process.env.CI
+    ? [["github"], ["list"], ["html", { open: "never" }]]
+    : "list",
   globalSetup: "./tests/e2e/global-setup.ts",
   use: {
     baseURL,
