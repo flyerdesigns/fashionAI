@@ -123,11 +123,16 @@ describeIntegration("video generation E2E integration", () => {
     const body = (await response.json()) as { jobId: string };
 
     const worker = new VideoWorker();
-    await worker.processNextQueued("video-e2e");
+    // Provider errors retry once (VIDEO_MAX_ATTEMPTS=2) before terminal failure.
+    await worker.process(body.jobId);
+    await worker.process(body.jobId);
 
     const prisma = getTestPrisma();
     const job = await prisma.videoGenerationJob.findUniqueOrThrow({ where: { id: body.jobId } });
     expect(job.status).toBe("failed");
+
+    const account = await prisma.creditAccount.findUniqueOrThrow({ where: { userId: user.id } });
+    expect(account.reserved).toBe(0);
   });
 
   it("enforces duplicate request idempotency", async () => {
